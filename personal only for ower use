@@ -1,0 +1,44 @@
+https://github.com/Oxl-Legacy/deepcool-digital-linux/releases
+install:
+sudo apt update
+sudo apt install -y python3-pip libhidapi-libusb0
+pip3 install hidapi
+lsusb
+Bus 001 Device 007: ID 3633:0006 DeepCool LS-SE-DIGITAL
+sudo nano /etc/udev/rules.d/99-deepcool.rules
+
+{ # Intel RAPL energy usage file
+ACTION=="add", SUBSYSTEM=="powercap", KERNEL=="intel-rapl:0", RUN+="/bin/chmod 444 /sys/class/powercap/intel-rapl/intel-rapl:0/energy_uj"
+
+# DeepCool LS520 (LS-SE-DIGITAL)
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="3633", ATTRS{idProduct}=="0006", MODE="0666"
+
+# Optional: CH510 MESH DIGITAL case (if you have it)
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="34d3", ATTRS{idProduct}=="1100", MODE="0666"
+
+} use this without {}
+
+chmod +x deepcool-digital-linux
+
+deepcool-digital-linux --list
+6 | LS-SE-DIGITAL
+
+Create file /etc/systemd/system/deepcool.service
+
+[Unit]
+Description=DeepCool LS520 auto display service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/home/oxl/tools/python/deepcool-digital-linux --pid 6 --mode auto
+Restart=always
+RestartSec=5
+User=root
+
+[Install]
+WantedBy=multi-user.target
+
+sudo systemctl daemon-reload
+sudo systemctl start deepcool.service
+sudo systemctl enable deepcool.service
